@@ -3,20 +3,29 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, Modal } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-google-fonts/noto-sans-jp';
+import { getUserProfile } from '@/utils/api';
+
+// Verification code expiration time: 10 minutes in milliseconds
+const CODE_EXPIRATION_TIME = 10 * 60 * 1000; // 10 minutes
 
 export default function EmailVerifyScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const email = params.email as string;
   const initialCode = params.code as string;
+  const initialCodeTimestamp = params.codeTimestamp as string;
   
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [verificationCode, setVerificationCode] = useState(initialCode);
+  const [codeTimestamp, setCodeTimestamp] = useState(initialCodeTimestamp ? parseInt(initialCodeTimestamp) : Date.now());
   const [modalVisible, setModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [modalTitle, setModalTitle] = useState('エラー');
   const [resendLoading, setResendLoading] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(0);
+  const [verifying, setVerifying] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
+  const hasVerifiedRef = useRef(false);
 
   let [fontsLoaded] = useFonts({
     NotoSansJP_400Regular,
@@ -26,10 +35,31 @@ export default function EmailVerifyScreen() {
   // Auto-verify when all 6 digits are entered
   useEffect(() => {
     const fullCode = code.join('');
-    if (fullCode.length === 6) {
+    if (fullCode.length === 6 && !verifying && verificationCode && !hasVerifiedRef.current) {
+      // Only verify if we have a valid verification code and haven't verified yet
+      hasVerifiedRef.current = true;
       handleVerify(fullCode);
     }
-  }, [code]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, verifying, verificationCode]);
+
+  // Update remaining time every second
+  useEffect(() => {
+    const updateRemainingTime = () => {
+      const now = Date.now();
+      const elapsed = now - codeTimestamp;
+      const remaining = Math.max(0, CODE_EXPIRATION_TIME - elapsed);
+      setRemainingTime(Math.floor(remaining / 1000)); // Convert to seconds
+    };
+
+    // Update immediately
+    updateRemainingTime();
+
+    // Update every second
+    const interval = setInterval(updateRemainingTime, 1000);
+
+    return () => clearInterval(interval);
+  }, [codeTimestamp]);
 
   if (!fontsLoaded) {
     return null;
@@ -102,13 +132,37 @@ export default function EmailVerifyScreen() {
     }
   };
 
-  const handleVerify = (enteredCode?: string) => {
+  const isCodeExpired = (timestamp: number): boolean => {
+    const now = Date.now();
+    return (now - timestamp) > CODE_EXPIRATION_TIME;
+  };
+
+  const handleVerify = async (enteredCode?: string) => {
+    // Prevent multiple verifications
+    if (hasVerifiedRef.current && verifying) {
+      console.log('Verification already in progress, ignoring duplicate call');
+      return;
+    }
+
     const codeToVerify = enteredCode || code.join('');
     
     if (codeToVerify.length !== 6) {
       setModalTitle('エラー');
       setErrorMessage('6桁のコードを入力してください');
       setModalVisible(true);
+      hasVerifiedRef.current = false; // Reset on error
+      return;
+    }
+    
+    // Check if code has expired
+    if (isCodeExpired(codeTimestamp)) {
+      setModalTitle('エラー');
+      setErrorMessage('認証コードの有効期限が切れています。新しいコードを再送信してください。');
+      setModalVisible(true);
+      // Clear code on error
+      setCode(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+      hasVerifiedRef.current = false; // Reset on error
       return;
     }
     
@@ -119,13 +173,43 @@ export default function EmailVerifyScreen() {
       // Clear code on error
       setCode(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
+      hasVerifiedRef.current = false; // Reset on error
       return;
     }
     
-    // TODO: Implement actual verification logic
+    // Code verification successful
     console.log('Verification successful for email:', email);
-    alert('認証に成功しました！');
-    // Proceed with sign-in
+    
+    // Check if user already exists in database
+    setVerifying(true);
+    try {
+      const existingUser = await getUserProfile(email);
+      
+      if (existingUser && existingUser.displayName) {
+        // User already registered - skip registration flow and go to home
+        console.log('User already registered, skipping to home');
+        router.replace({
+          pathname: '/home',
+          params: { email },
+        });
+      } else {
+        // New user - proceed with registration flow
+        console.log('New user, proceeding with registration');
+        router.replace({
+          pathname: '/consent',
+          params: { email },
+        });
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      // On error, proceed with registration flow as fallback
+      router.replace({
+        pathname: '/consent',
+        params: { email },
+      });
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const sendVerificationEmail = async (emailAddress: string, code: string): Promise<boolean> => {
@@ -162,6 +246,7 @@ export default function EmailVerifyScreen() {
     
     // Generate new code
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const newTimestamp = Date.now();
     console.log('New verification code generated:', newCode);
     
     // Send new code to email
@@ -170,8 +255,9 @@ export default function EmailVerifyScreen() {
     setResendLoading(false);
     
     if (emailSent) {
-      // Update the verification code state
+      // Update the verification code state and timestamp
       setVerificationCode(newCode);
+      setCodeTimestamp(newTimestamp);
       // Clear the input fields
       setCode(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
@@ -210,6 +296,18 @@ export default function EmailVerifyScreen() {
 
         {/* Instruction Text */}
         <Text style={styles.instructionText}>認証コードを<br/>入力してください</Text>
+
+        {/* Verifying Status */}
+        {verifying && (
+          <Text style={styles.verifyingText}>確認中...</Text>
+        )}
+
+        {/* Remaining Time Display */}
+        {remainingTime > 0 && !verifying && (
+          <Text style={styles.remainingTimeText}>
+            有効期限: {Math.floor(remainingTime / 60)}分{remainingTime % 60}秒
+          </Text>
+        )}
 
         {/* Code Input Fields */}
         <View style={styles.codeContainer}>
@@ -349,7 +447,21 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#6758E8',
     fontFamily: 'NotoSansJP_700Bold',
-    marginBottom: 65,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  remainingTimeText: {
+    fontSize: 14,
+    color: '#999',
+    fontFamily: 'NotoSansJP_400Regular',
+    marginBottom: 45,
+    textAlign: 'center',
+  },
+  verifyingText: {
+    fontSize: 14,
+    color: '#6758E8',
+    fontFamily: 'NotoSansJP_400Regular',
+    marginBottom: 45,
     textAlign: 'center',
   },
   codeContainer: {

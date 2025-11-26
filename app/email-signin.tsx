@@ -91,12 +91,14 @@ export default function EmailSignInScreen() {
       return;
     }
     
-    // Navigate to verification screen with email and code
+    // Navigate to verification screen with email, code, and timestamp
+    const codeTimestamp = Date.now().toString();
     router.push({
       pathname: '/email-verify',
       params: {
         email: trimmedEmail,
         code: verificationCode,
+        codeTimestamp: codeTimestamp,
       },
     });
   };
