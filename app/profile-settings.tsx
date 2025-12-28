@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-google-fonts/noto-sans-jp';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { getUserProfile } from '@/utils/api';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function ProfileSettingsScreen() {
   const email = params.email as string;
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [photoModalVisible, setPhotoModalVisible] = useState(false);
 
   let [fontsLoaded] = useFonts({
     NotoSansJP_400Regular,
@@ -21,6 +23,13 @@ export default function ProfileSettingsScreen() {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  // Reload profile when screen comes into focus (after editing photo)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProfile();
+    }, [])
+  );
 
   const loadProfile = async () => {
     setLoading(true);
@@ -63,6 +72,57 @@ export default function ProfileSettingsScreen() {
     }
   };
 
+  const handleEditPhoto = () => {
+    setPhotoModalVisible(true);
+  };
+
+  const handleSelectFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('写真へのアクセス許可が必要です');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+      base64: true, // Get base64 for web compatibility
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setPhotoModalVisible(false);
+      router.push({
+        pathname: '/profile-photo-crop',
+        params: { email, imageUri: result.assets[0].uri, returnTo: 'settings' },
+      });
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('カメラへのアクセス許可が必要です');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+      base64: true, // Get base64 for web compatibility
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setPhotoModalVisible(false);
+      router.push({
+        pathname: '/profile-photo-crop',
+        params: { email, imageUri: result.assets[0].uri, withGuide: 'true', returnTo: 'settings' },
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -87,7 +147,7 @@ export default function ProfileSettingsScreen() {
               resizeMode="cover"
               onError={() => console.log('Profile photo load error')}
             />
-            <TouchableOpacity style={styles.editPhotoButton}>
+            <TouchableOpacity style={styles.editPhotoButton} onPress={handleEditPhoto}>
               <Ionicons name="camera" size={20} color={COLORS.WHITE} />
             </TouchableOpacity>
           </View>
@@ -174,6 +234,46 @@ export default function ProfileSettingsScreen() {
           </View>
         </TouchableOpacity>
       </View>
+
+      {/* Photo Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={photoModalVisible}
+        onRequestClose={() => setPhotoModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>プロフィール写真を変更</Text>
+            
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={handleTakePhoto}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="camera" size={24} color={COLORS.PURPLE_PRIMARY} />
+              <Text style={styles.modalOptionText}>カメラで撮影</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={handleSelectFromLibrary}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="images" size={24} color={COLORS.PURPLE_PRIMARY} />
+              <Text style={styles.modalOptionText}>ライブラリから選択</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => setPhotoModalVisible(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.modalCancelText}>キャンセル</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -339,6 +439,50 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#FF0000',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.WHITE,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    color: COLORS.GREY_DARK,
+    fontFamily: 'NotoSansJP_700Bold',
+    textAlign: 'center',
+    marginBottom: 25,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.PURPLE_LIGHT,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 15,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: COLORS.GREY_DARK,
+    fontFamily: 'NotoSansJP_400Regular',
+  },
+  modalCancelButton: {
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    color: COLORS.GREY_MEDIUM,
+    fontFamily: 'NotoSansJP_400Regular',
   },
 });
 

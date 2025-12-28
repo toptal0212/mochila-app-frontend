@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-google-fonts/noto-sans-jp';
@@ -12,7 +12,6 @@ export default function BirthdayInputScreen() {
   const email = params.email as string;
   const [date, setDate] = useState(['', '', '', '', '', '', '', '']); // YYYY/MM/DD
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   let [fontsLoaded] = useFonts({
     NotoSansJP_400Regular,
@@ -24,36 +23,40 @@ export default function BirthdayInputScreen() {
   }
 
   const handleKeypadPress = (value: string) => {
-    if (focusedIndex < 8) {
+    // Find the first empty position
+    const emptyIndex = date.findIndex(digit => digit === '');
+    if (emptyIndex !== -1) {
       const newDate = [...date];
-      newDate[focusedIndex] = value;
+      newDate[emptyIndex] = value;
       setDate(newDate);
       
       // Auto-advance to next field
-      if (focusedIndex === 3) {
-        setFocusedIndex(5); // Skip the '/' position
-      } else if (focusedIndex < 7) {
-        setFocusedIndex(focusedIndex + 1);
+      if (emptyIndex === 3) {
+        setFocusedIndex(4); // Move to month
+      } else if (emptyIndex < 7) {
+        setFocusedIndex(emptyIndex + 1);
+      } else {
+        setFocusedIndex(7);
       }
     }
   };
 
   const handleBackspace = () => {
-    if (focusedIndex > 0) {
-      const newDate = [...date];
-      if (focusedIndex === 5) {
-        setFocusedIndex(3);
-        newDate[3] = '';
-      } else {
-        setFocusedIndex(focusedIndex - 1);
-        newDate[focusedIndex - 1] = '';
+    // Find the last filled position
+    let lastFilledIndex = -1;
+    for (let i = date.length - 1; i >= 0; i--) {
+      if (date[i] !== '') {
+        lastFilledIndex = i;
+        break;
       }
-      setDate(newDate);
     }
-  };
-
-  const handleInputFocus = (index: number) => {
-    setFocusedIndex(index);
+    
+    if (lastFilledIndex !== -1) {
+      const newDate = [...date];
+      newDate[lastFilledIndex] = '';
+      setDate(newDate);
+      setFocusedIndex(lastFilledIndex);
+    }
   };
 
   const isDateValid = () => {
@@ -107,84 +110,39 @@ export default function BirthdayInputScreen() {
       {/* Date Input */}
       <View style={styles.dateContainer}>
         {[0, 1, 2, 3].map((index) => (
-          <TextInput
+          <View
             key={`year-${index}`}
-            ref={(ref: any) => (inputRefs.current[index] = ref)}
             style={[
               styles.dateInput,
               focusedIndex === index && styles.dateInputFocused
             ]}
-            value={date[index]}
-            onChangeText={(text) => {
-              if (/^\d$/.test(text) || text === '') {
-                const newDate = [...date];
-                newDate[index] = text;
-                setDate(newDate);
-                if (text && index < 3) {
-                  setFocusedIndex(index + 1);
-                }
-              }
-            }}
-            onFocus={() => handleInputFocus(index)}
-            keyboardType="number-pad"
-            maxLength={1}
-            selectTextOnFocus
-            showSoftInputOnFocus={false}
-          />
+          >
+            <Text style={styles.dateText}>{date[index]}</Text>
+          </View>
         ))}
         <Text style={styles.separator}>/</Text>
         {[4, 5].map((index) => (
-          <TextInput
+          <View
             key={`month-${index}`}
-            ref={(ref: any) => (inputRefs.current[index] = ref)}
             style={[
               styles.dateInput,
               focusedIndex === index && styles.dateInputFocused
             ]}
-            value={date[index]}
-            onChangeText={(text) => {
-              if (/^\d$/.test(text) || text === '') {
-                const newDate = [...date];
-                newDate[index] = text;
-                setDate(newDate);
-                if (text && index < 5) {
-                  setFocusedIndex(index + 1);
-                }
-              }
-            }}
-            onFocus={() => handleInputFocus(index)}
-            keyboardType="number-pad"
-            maxLength={1}
-            selectTextOnFocus
-            showSoftInputOnFocus={false}
-          />
+          >
+            <Text style={styles.dateText}>{date[index]}</Text>
+          </View>
         ))}
         <Text style={styles.separator}>/</Text>
         {[6, 7].map((index) => (
-          <TextInput
+          <View
             key={`day-${index}`}
-            ref={(ref: any) => (inputRefs.current[index] = ref)}
             style={[
               styles.dateInput,
               focusedIndex === index && styles.dateInputFocused
             ]}
-            value={date[index]}
-            onChangeText={(text) => {
-              if (/^\d$/.test(text) || text === '') {
-                const newDate = [...date];
-                newDate[index] = text;
-                setDate(newDate);
-                if (text && index < 7) {
-                  setFocusedIndex(index + 1);
-                }
-              }
-            }}
-            onFocus={() => handleInputFocus(index)}
-            keyboardType="number-pad"
-            maxLength={1}
-            selectTextOnFocus
-            showSoftInputOnFocus={false}
-          />
+          >
+            <Text style={styles.dateText}>{date[index]}</Text>
+          </View>
         ))}
       </View>
 
@@ -291,14 +249,18 @@ const styles = StyleSheet.create({
     height: 50,
     borderBottomWidth: 2,
     borderBottomColor: COLORS.GREY_MEDIUM,
-    fontSize: 24,
-    textAlign: 'center',
-    color: COLORS.GREY_DARK,
-    fontFamily: 'NotoSansJP_700Bold',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dateInputFocused: {
     borderBottomColor: COLORS.TEAL_DARK,
     backgroundColor: COLORS.TEAL_LIGHT,
+  },
+  dateText: {
+    fontSize: 24,
+    textAlign: 'center',
+    color: COLORS.GREY_DARK,
+    fontFamily: 'NotoSansJP_700Bold',
   },
   separator: {
     fontSize: 24,

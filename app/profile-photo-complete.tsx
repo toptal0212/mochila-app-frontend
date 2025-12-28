@@ -12,6 +12,7 @@ export default function ProfilePhotoCompleteScreen() {
   const email = params.email as string;
   const imageUri = params.imageUri as string;
   const filter = params.filter as string;
+  const returnTo = params.returnTo as string; // 'settings' or undefined
   const [modalVisible, setModalVisible] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -51,11 +52,18 @@ export default function ProfilePhotoCompleteScreen() {
 
   const handleCloseModal = () => {
     setModalVisible(false);
-    // Navigate to home screen
-    router.replace({
-      pathname: '/home',
-      params: { email },
-    });
+    // Navigate back to appropriate screen
+    if (returnTo === 'settings') {
+      router.replace({
+        pathname: '/profile-settings',
+        params: { email },
+      });
+    } else {
+      router.replace({
+        pathname: '/home',
+        params: { email },
+      });
+    }
   };
 
   return (

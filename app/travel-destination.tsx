@@ -53,7 +53,7 @@ export default function TravelDestinationScreen() {
   return (
     <View style={styles.container}>
       {/* Title */}
-      <Text style={styles.title}>どこの国で遊びたいですか?</Text>
+      <Text style={styles.title}>どのエリアで遊びたいですか?</Text>
       <Text style={styles.subtitle}>選択したエリアでマッチしやすくなります</Text>
 
       {/* Country Selection */}

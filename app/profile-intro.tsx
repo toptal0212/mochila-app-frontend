@@ -45,11 +45,6 @@ export default function ProfileIntroScreen() {
         <Text style={styles.subtitle}>あとから変更できます</Text>
       </View>
 
-      {/* Next Button */}
-      <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-        <Text style={styles.nextButtonText}>次へ</Text>
-      </TouchableOpacity>
-
       {/* Navigation Buttons */}
       <View style={styles.navigationContainer}>
         <TouchableOpacity style={styles.navButton} onPress={handleBack} activeOpacity={0.7}>
@@ -102,23 +97,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.GREY_MEDIUM,
     fontFamily: 'NotoSansJP_400Regular',
-    textAlign: 'center',
-  },
-  nextButton: {
-    alignSelf: 'center',
-    marginBottom: 30,
-    paddingVertical: 18,
-    paddingHorizontal: 60,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: COLORS.GREY_DARK,
-    backgroundColor: COLORS.WHITE,
-    minWidth: 200,
-  },
-  nextButtonText: {
-    fontSize: 16,
-    color: COLORS.GREY_DARK,
-    fontFamily: 'NotoSansJP_700Bold',
     textAlign: 'center',
   },
   navigationContainer: {

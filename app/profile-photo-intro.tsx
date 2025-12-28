@@ -42,10 +42,12 @@ export default function ProfilePhotoIntroScreen() {
 
         {/* Central Graphic */}
         <View style={styles.imageContainer}>
-          {/* Placeholder for main image - user should add actual image */}
-          <View style={styles.mainImagePlaceholder}>
-            <Text style={styles.placeholderText}>Main Photo</Text>
-          </View>
+          {/* Main profile photo example */}
+          <Image 
+            source={require('@/assets/images/良い写真.jpg')}
+            style={styles.mainImage}
+            resizeMode="cover"
+          />
           
           {/* Thumbs up icon */}
           <View style={styles.thumbsUpContainer}>
@@ -113,19 +115,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  mainImagePlaceholder: {
+  mainImage: {
     width: 250,
     height: 300,
-    backgroundColor: COLORS.GREY_LIGHT,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
-  },
-  placeholderText: {
-    fontSize: 14,
-    color: COLORS.GREY_MEDIUM,
-    fontFamily: 'NotoSansJP_400Regular',
   },
   thumbsUpContainer: {
     width: 80,

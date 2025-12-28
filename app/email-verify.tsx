@@ -5,8 +5,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-google-fonts/noto-sans-jp';
 import { getUserProfile } from '@/utils/api';
 
-// Verification code expiration time: 10 minutes in milliseconds
-const CODE_EXPIRATION_TIME = 10 * 60 * 1000; // 10 minutes
+// Verification code expiration time: 1 minute in milliseconds
+const CODE_EXPIRATION_TIME = 1 * 60 * 1000; // 1 minute
 
 export default function EmailVerifyScreen() {
   const router = useRouter();
@@ -319,10 +319,10 @@ export default function EmailVerifyScreen() {
               value={digit}
               onChangeText={(text) => handleCodeChange(text, index)}
               onKeyPress={(e) => handleKeyPress(e, index)}
-              keyboardType="number-pad"
               maxLength={1}
               selectTextOnFocus
               showSoftInputOnFocus={false}
+              caretHidden={true}
             />
           ))}
         </View>

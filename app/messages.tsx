@@ -141,13 +141,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFEB3B',
+    backgroundColor: COLORS.PURPLE_PRIMARY,
     paddingHorizontal: 15,
     paddingVertical: 12,
   },
   bannerText: {
     fontSize: 14,
-    color: COLORS.GREY_DARK,
+    color: COLORS.WHITE,
     fontFamily: 'NotoSansJP_400Regular',
     flex: 1,
   },
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   bannerButtonText: {
     fontSize: 12,
-    color: COLORS.GREY_DARK,
+    color: COLORS.WHITE,
     fontFamily: 'NotoSansJP_400Regular',
   },
   maintenanceContainer: {
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   bottomBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFEB3B',
+    backgroundColor: COLORS.PURPLE_PRIMARY,
     paddingHorizontal: 15,
     paddingVertical: 12,
     gap: 10,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   bottomBannerText: {
     fontSize: 12,
-    color: COLORS.GREY_DARK,
+    color: COLORS.WHITE,
     fontFamily: 'NotoSansJP_400Regular',
     lineHeight: 18,
   },
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   settingsButtonText: {
     fontSize: 12,
-    color: COLORS.GREY_DARK,
+    color: COLORS.WHITE,
     fontFamily: 'NotoSansJP_400Regular',
   },
   bottomNav: {

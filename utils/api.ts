@@ -74,6 +74,25 @@ export const getUserProfile = async (email: string): Promise<UserProfile | null>
   }
 };
 
+// Helper function to convert blob URI to base64 (for web)
+const uriToBase64 = async (uri: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+      const reader = new FileReader();
+      reader.onloadend = function() {
+        resolve(reader.result as string);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(xhr.response);
+    };
+    xhr.onerror = reject;
+    xhr.responseType = 'blob';
+    xhr.open('GET', uri, true);
+    xhr.send(null);
+  });
+};
+
 export const uploadProfilePhoto = async (
   email: string,
   imageUri: string,
@@ -83,17 +102,39 @@ export const uploadProfilePhoto = async (
     // Create FormData for React Native
     const formData = new FormData();
     
-    // For React Native, we need to append the file differently
-    // The imageUri should be a local file URI
-    formData.append('photo', {
-      uri: imageUri,
-      type: 'image/jpeg',
-      name: 'profile-photo.jpg',
-    } as any);
-    
-    formData.append('email', email);
-    if (filter) {
-      formData.append('filter', filter);
+    // Check if imageUri is a base64 data URI
+    if (imageUri.startsWith('data:image/')) {
+      // If it's a base64 data URI, send it as base64
+      formData.append('photoBase64', imageUri);
+      formData.append('email', email);
+      if (filter) {
+        formData.append('filter', filter);
+      }
+      console.log('📤 Uploading base64 image...');
+    } else if (imageUri.startsWith('blob:')) {
+      // Web platform returns blob URLs - convert to base64
+      console.log('📤 Converting blob to base64 for web...');
+      const base64 = await uriToBase64(imageUri);
+      formData.append('photoBase64', base64);
+      formData.append('email', email);
+      if (filter) {
+        formData.append('filter', filter);
+      }
+      console.log('📤 Uploading base64 image from blob...');
+    } else {
+      // For React Native, we need to append the file differently
+      // The imageUri should be a local file URI
+      formData.append('photo', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'profile-photo.jpg',
+      } as any);
+      
+      formData.append('email', email);
+      if (filter) {
+        formData.append('filter', filter);
+      }
+      console.log('📤 Uploading file from URI...');
     }
 
     const uploadResponse = await fetch(`${API_BASE_URL}/user/profile/photo`, {
@@ -300,14 +341,33 @@ export const uploadAdditionalPhoto = async (
   try {
     const formData = new FormData();
     
-    formData.append('photo', {
-      uri: imageUri,
-      type: 'image/jpeg',
-      name: 'additional-photo.jpg',
-    } as any);
-    
-    formData.append('email', email);
-    formData.append('isAdditional', 'true');
+    // Check if imageUri is a base64 data URI
+    if (imageUri.startsWith('data:image/')) {
+      // If it's a base64 data URI, send it as base64
+      formData.append('photoBase64', imageUri);
+      formData.append('email', email);
+      formData.append('isAdditional', 'true');
+      console.log('📤 Uploading additional base64 image...');
+    } else if (imageUri.startsWith('blob:')) {
+      // Web platform returns blob URLs - convert to base64
+      console.log('📤 Converting blob to base64 for web (additional photo)...');
+      const base64 = await uriToBase64(imageUri);
+      formData.append('photoBase64', base64);
+      formData.append('email', email);
+      formData.append('isAdditional', 'true');
+      console.log('📤 Uploading additional base64 image from blob...');
+    } else {
+      // For React Native, we need to append the file differently
+      formData.append('photo', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'additional-photo.jpg',
+      } as any);
+      
+      formData.append('email', email);
+      formData.append('isAdditional', 'true');
+      console.log('📤 Uploading additional file from URI...');
+    }
 
     const uploadResponse = await fetch(`${API_BASE_URL}/user/profile/photo`, {
       method: 'POST',

@@ -6,6 +6,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import * as ImagePicker from 'expo-image-picker';
 
+// Import bad example images
+const badExampleImages = {
+  bad_01: require('@/assets/images/暗い.jpg'),
+  bad_02: require('@/assets/images/顔がアップすぎる.jpg'),
+  bad_03: require('@/assets/images/顔が見えない.jpg'),
+  bad_04: require('@/assets/images/画像が粗い.jpg'),
+  bad_05: require('@/assets/images/生活感が溢れている.jpg'),
+  bad_06: require('@/assets/images/顔が写っていない.jpg'),
+};
+
+// Import good example images (placeholder - use appropriate images)
+const goodExampleImages = {
+  good_01: require('@/assets/images/笑顔.jpg'), // Replace with actual good example image
+  good_02: require('@/assets/images/趣味がわかる.jpg'), // Replace with actual good example image
+  good_03: require('@/assets/images/全身がわかる.jpg'), // Replace with actual good example image
+};
+
 export default function ProfilePhotoRegisterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -34,10 +51,11 @@ export default function ProfilePhotoRegisterScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
+      base64: true, // Get base64 for web compatibility
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -57,6 +75,7 @@ export default function ProfilePhotoRegisterScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
+      base64: true, // Get base64 for web compatibility
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -80,9 +99,9 @@ export default function ProfilePhotoRegisterScreen() {
   };
 
   const goodExamples = [
-    { label: '笑顔', description: 'Smiling face' },
-    { label: '趣味がわかる', description: 'Shows your hobbies' },
-    { label: '全身がわかる', description: 'Shows your whole body' },
+    { label: '笑顔', description: 'Smiling face', image: goodExampleImages.good_01 },
+    { label: '趣味がわかる', description: 'Shows your hobbies', image: goodExampleImages.good_02 },
+    { label: '全身がわかる', description: 'Shows your whole body', image: goodExampleImages.good_03 },
   ];
 
   return (
@@ -124,9 +143,10 @@ export default function ProfilePhotoRegisterScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.examplesScroll}>
           {goodExamples.map((example, index) => (
             <View key={index} style={styles.exampleItem}>
-              <View style={styles.exampleImagePlaceholder}>
-                <Text style={styles.exampleLabel}>{example.label}</Text>
+              <View style={styles.exampleImageContainer}>
+                <Image source={example.image} style={styles.exampleImage} />
               </View>
+              <Text style={styles.exampleLabel}>{example.label}</Text>
             </View>
           ))}
         </ScrollView>
@@ -155,15 +175,16 @@ export default function ProfilePhotoRegisterScreen() {
             {/* Bad Examples Grid */}
             <View style={styles.badExamplesGrid}>
               {[
-                { label: '暗い' },
-                { label: '顔がアップすぎる' },
-                { label: '顔が見えない' },
-                { label: '画像が粗い' },
-                { label: '生活感が溢れている' },
-                { label: '顔が写っていない' },
+                { label: '暗い', image: badExampleImages.bad_01 },
+                { label: '顔がアップすぎる', image: badExampleImages.bad_02 },
+                { label: '顔が見えない', image: badExampleImages.bad_03 },
+                { label: '画像が粗い', image: badExampleImages.bad_04 },
+                { label: '生活感が溢れている', image: badExampleImages.bad_05 },
+                { label: '顔が写っていない', image: badExampleImages.bad_06 },
               ].map((item, index) => (
                 <View key={index} style={styles.badExampleItem}>
                   <View style={styles.badExampleImage}>
+                    <Image source={item.image} style={styles.badExampleImageStyle} />
                     <View style={styles.badExampleX}>
                       <Text style={styles.badExampleXText}>✕</Text>
                     </View>
@@ -293,6 +314,20 @@ const styles = StyleSheet.create({
   },
   exampleItem: {
     marginRight: 15,
+    alignItems: 'center',
+  },
+  exampleImageContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    backgroundColor: COLORS.GREY_LIGHT,
+    marginBottom: 8,
+  },
+  exampleImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   exampleImagePlaceholder: {
     width: 100,
@@ -361,6 +396,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    overflow: 'hidden',
+  },
+  badExampleImageStyle: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   badExampleX: {
     position: 'absolute',

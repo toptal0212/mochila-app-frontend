@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, Dimensions, SafeAreaView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-google-fonts/noto-sans-jp';
 import { COLORS } from '@/constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Filter configurations with CSS-like properties
+const FILTER_CONFIGS = {
+  original: { brightness: 1, contrast: 1, saturation: 1 },
+  clear: { brightness: 1.1, contrast: 1.1, saturation: 1.2 },
+  creamy: { brightness: 1.15, contrast: 0.95, saturation: 0.9 },
+  cool: { brightness: 0.95, contrast: 1.05, saturation: 1.1 },
+  hot: { brightness: 1.05, contrast: 1.1, saturation: 1.3 },
+};
+
 export default function ProfilePhotoFilterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const email = params.email as string;
   const imageUri = params.imageUri as string;
+  const returnTo = params.returnTo as string;
   const [selectedFilter, setSelectedFilter] = useState('original');
+  const [currentTab, setCurrentTab] = useState<'filter' | 'edit'>('filter');
 
   let [fontsLoaded] = useFonts({
     NotoSansJP_400Regular,
@@ -30,10 +41,17 @@ export default function ProfilePhotoFilterScreen() {
     { id: 'hot', name: 'ホット' },
   ];
 
+  const getFilterStyle = (filterId: string) => {
+    const config = FILTER_CONFIGS[filterId as keyof typeof FILTER_CONFIGS];
+    return {
+      opacity: config.brightness,
+    };
+  };
+
   const handleNext = () => {
     router.push({
       pathname: '/profile-photo-complete',
-      params: { email, imageUri, filter: selectedFilter },
+      params: { email, imageUri, filter: selectedFilter, returnTo },
     });
   };
 
@@ -41,8 +59,14 @@ export default function ProfilePhotoFilterScreen() {
     router.back();
   };
 
+  const handleEditTab = () => {
+    setCurrentTab('edit');
+    // TODO: Implement edit functionality
+    alert('編集機能は現在開発中です');
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleCancel}>
@@ -53,55 +77,86 @@ export default function ProfilePhotoFilterScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Main Image */}
+      {/* Main Image with Filter */}
       <View style={styles.imageContainer}>
-        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+        <View style={[styles.filterOverlay, getFilterStyle(selectedFilter)]}>
+          <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+        </View>
       </View>
 
       {/* Filter Thumbnails */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersContainer}
-        style={styles.filtersScroll}
-      >
-        {filters.map((filter) => (
-          <TouchableOpacity
-            key={filter.id}
-            style={styles.filterItem}
-            onPress={() => setSelectedFilter(filter.id)}
-          >
-            <View
-              style={[
-                styles.filterThumbnail,
-                selectedFilter === filter.id && styles.filterThumbnailSelected,
-              ]}
+      {currentTab === 'filter' && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContainer}
+          style={styles.filtersScroll}
+        >
+          {filters.map((filter) => (
+            <TouchableOpacity
+              key={filter.id}
+              style={styles.filterItem}
+              onPress={() => setSelectedFilter(filter.id)}
             >
-              <Image source={{ uri: imageUri }} style={styles.filterThumbnailImage} />
-            </View>
-            <Text
-              style={[
-                styles.filterLabel,
-                selectedFilter === filter.id && styles.filterLabelSelected,
-              ]}
-            >
-              {filter.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <View
+                style={[
+                  styles.filterThumbnail,
+                  selectedFilter === filter.id && styles.filterThumbnailSelected,
+                ]}
+              >
+                <View style={getFilterStyle(filter.id)}>
+                  <Image source={{ uri: imageUri }} style={styles.filterThumbnailImage} />
+                </View>
+              </View>
+              <Text
+                style={[
+                  styles.filterLabel,
+                  selectedFilter === filter.id && styles.filterLabelSelected,
+                ]}
+              >
+                {filter.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Edit Mode Placeholder */}
+      {currentTab === 'edit' && (
+        <View style={styles.editContainer}>
+          <Text style={styles.editPlaceholder}>編集機能は現在開発中です</Text>
+        </View>
+      )}
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navTab}>
-          <Text style={[styles.navTabText, styles.navTabActive]}>フィルター</Text>
-          <View style={styles.navTabIndicator} />
+        <TouchableOpacity 
+          style={styles.navTab}
+          onPress={() => setCurrentTab('filter')}
+        >
+          <Text style={[styles.navTabText, currentTab === 'filter' && styles.navTabActive]}>
+            フィルター
+          </Text>
+          {currentTab === 'filter' && <View style={styles.navTabIndicator} />}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navTab}>
-          <Text style={styles.navTabText}>編集</Text>
+        <TouchableOpacity 
+          style={styles.navTab}
+          onPress={handleEditTab}
+        >
+          <Text style={[styles.navTabText, currentTab === 'edit' && styles.navTabActive]}>
+            編集
+          </Text>
+          {currentTab === 'edit' && <View style={styles.navTabIndicator} />}
         </TouchableOpacity>
       </View>
-    </View>
+
+      {/* Fixed Completion Button for Mobile */}
+      <View style={styles.fixedButtonContainer}>
+        <TouchableOpacity style={styles.completeButton} onPress={handleNext}>
+          <Text style={styles.completeButtonText}>完了</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -134,9 +189,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.BLACK,
   },
+  filterOverlay: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH,
+  },
   image: {
     width: SCREEN_WIDTH,
     height: SCREEN_WIDTH,
+  },
+  editContainer: {
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.GREY_DARK,
+  },
+  editPlaceholder: {
+    fontSize: 14,
+    color: COLORS.WHITE,
+    fontFamily: 'NotoSansJP_400Regular',
   },
   filtersScroll: {
     maxHeight: 150,
@@ -200,6 +270,32 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: COLORS.WHITE,
     marginTop: 5,
+  },
+  fixedButtonContainer: {
+    position: 'absolute',
+    bottom: 120,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+  },
+  completeButton: {
+    width: '100%',
+    maxWidth: 300,
+    paddingVertical: 16,
+    backgroundColor: COLORS.TEAL_PRIMARY,
+    borderRadius: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  completeButtonText: {
+    fontSize: 16,
+    color: COLORS.WHITE,
+    fontFamily: 'NotoSansJP_700Bold',
   },
 });
 

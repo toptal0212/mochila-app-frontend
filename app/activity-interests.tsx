@@ -83,7 +83,10 @@ export default function ActivityInterestsScreen() {
   return (
     <View style={styles.container}>
       {/* Title */}
-      <Text style={styles.title}>どんな遊びが好きですか?</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>何して遊びたいですか？</Text>
+        <Text style={styles.subtitle}>あとから変更できます。</Text>
+      </View>
 
       {/* Options Grid */}
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.optionsContainer}>
@@ -129,12 +132,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
   },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
   title: {
     fontSize: 20,
     color: COLORS.GREY_DARK,
     fontFamily: 'NotoSansJP_700Bold',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.GREY_MEDIUM,
+    fontFamily: 'NotoSansJP_400Regular',
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
