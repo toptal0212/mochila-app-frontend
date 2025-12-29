@@ -5,6 +5,7 @@ import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-googl
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { getMemberProfile, getUserProfile } from '@/utils/api';
+import { getDisplayAge } from '@/utils/helpers';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -123,7 +124,7 @@ export default function ProfileDetailScreen() {
           <View style={styles.userBasic}>
             <Text style={styles.userName}>{profile.displayName || 'ユーザー'}</Text>
             <Text style={styles.userAgeLocation}>
-              {profile.age}歳/{profile.region}
+              {getDisplayAge(profile) || '未設定'}歳/{profile.region}
             </Text>
           </View>
           <View style={styles.onlineStatus}>

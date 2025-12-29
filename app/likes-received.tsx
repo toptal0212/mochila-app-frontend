@@ -5,6 +5,7 @@ import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-googl
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { getLikesReceived, addLike, getUserProfile } from '@/utils/api';
+import { getDisplayAge } from '@/utils/helpers';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -45,7 +46,7 @@ export default function LikesReceivedScreen() {
           return {
             id: like.user?.id || like.fromUserId,
             displayName: like.user?.displayName || 'ユーザー',
-            age: like.user?.age || 0,
+            age: getDisplayAge(like.user),
             region: like.user?.region || '',
             height: like.user?.height || '',
             occupation: like.user?.occupation || '',
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 15,
     paddingHorizontal: 20,
     paddingBottom: 15,
     backgroundColor: COLORS.WHITE,

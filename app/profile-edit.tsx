@@ -5,6 +5,7 @@ import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-googl
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { getUserProfile, saveUserProfile } from '@/utils/api';
+import { getDisplayAge } from '@/utils/helpers';
 
 const PREFECTURES = [
   '北海道', '青森', '岩手', '宮城', '秋田', '山形', '福島',
@@ -169,7 +170,10 @@ export default function ProfileEditScreen() {
           <Text style={styles.sectionLabel}>年齢</Text>
           <View style={styles.readOnlyField}>
             <Text style={styles.readOnlyText}>
-              {profile?.age ? `${profile.age}歳` : '未設定'}
+              {(() => {
+                const age = getDisplayAge(profile);
+                return age ? `${age}歳` : '未設定';
+              })()}
             </Text>
             <Text style={styles.helperText}>年齢は生年月日から自動計算されます</Text>
           </View>

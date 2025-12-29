@@ -5,6 +5,7 @@ import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-googl
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { getFootprints, addLike, getUserProfile } from '@/utils/api';
+import { getDisplayAge } from '@/utils/helpers';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -45,7 +46,7 @@ export default function FootprintsScreen() {
           return {
             id: footprint.user?.id || footprint.viewerId,
             displayName: footprint.user?.displayName || 'ユーザー',
-            age: footprint.user?.age || 0,
+            age: getDisplayAge(footprint.user),
             region: footprint.user?.region || '',
             height: footprint.user?.height || '',
             occupation: footprint.user?.occupation || '',
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 15,
     paddingHorizontal: 20,
     paddingBottom: 15,
     backgroundColor: COLORS.WHITE,

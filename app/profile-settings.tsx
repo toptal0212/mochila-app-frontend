@@ -5,6 +5,7 @@ import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-googl
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
 import { getUserProfile } from '@/utils/api';
+import { getDisplayAge } from '@/utils/helpers';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileSettingsScreen() {
@@ -153,7 +154,7 @@ export default function ProfileSettingsScreen() {
           </View>
           <Text style={styles.profileName}>{profile?.displayName || 'ユーザー'}</Text>
           <Text style={styles.profileInfo}>
-            {profile?.age}歳 / {profile?.region || '未設定'}
+            {getDisplayAge(profile) || '未設定'}歳 / {profile?.region || '未設定'}
           </Text>
         </View>
 
@@ -194,7 +195,7 @@ export default function ProfileSettingsScreen() {
         {/* App Info */}
         <View style={styles.appInfoSection}>
           <Text style={styles.appInfoText}>Mochila v1.0.0</Text>
-          <Text style={styles.appInfoText}>© 2024 Mochila</Text>
+          <Text style={styles.appInfoText}>© 2026 Mochila</Text>
         </View>
       </ScrollView>
 
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 15,
     paddingHorizontal: 20,
     paddingBottom: 15,
     backgroundColor: COLORS.WHITE,
@@ -464,7 +465,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 18,
     paddingHorizontal: 20,
-    backgroundColor: COLORS.PURPLE_LIGHT,
+    backgroundColor: COLORS.PURPLE_PRIMARY,
     borderRadius: 12,
     marginBottom: 12,
     gap: 15,

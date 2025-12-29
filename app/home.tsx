@@ -4,10 +4,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFonts, NotoSansJP_400Regular, NotoSansJP_700Bold } from '@expo-google-fonts/noto-sans-jp';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/colors';
-import { getMembersList } from '@/utils/api';
+import { getMembersList, getLikesReceived, getUserProfile } from '@/utils/api';
+import { getDisplayAge } from '@/utils/helpers';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - 40 - 10) / 2; // 2 columns with padding and gap
+const CARD_WIDTH = (SCREEN_WIDTH - 30) / 2; // 2 columns: screen width - (left padding 10 + right padding 10 + gap 10) / 2
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('popular');
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [likesReceivedCount, setLikesReceivedCount] = useState(0);
 
   let [fontsLoaded] = useFonts({
     NotoSansJP_400Regular,
@@ -25,6 +27,25 @@ export default function HomeScreen() {
   useEffect(() => {
     loadMembers();
   }, [activeTab]);
+
+  useEffect(() => {
+    loadLikesCount();
+  }, [email]);
+
+  const loadLikesCount = async () => {
+    if (!email) return;
+    
+    try {
+      const userProfile = await getUserProfile(email);
+      if (userProfile && (userProfile as any).id) {
+        const likesData = await getLikesReceived((userProfile as any).id);
+        setLikesReceivedCount(likesData.length);
+      }
+    } catch (error) {
+      console.error('Error loading likes count:', error);
+      setLikesReceivedCount(0);
+    }
+  };
 
   const loadMembers = async () => {
     setLoading(true);
@@ -65,7 +86,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="thumbs-up" size={24} color={COLORS.PURPLE_PRIMARY} />
-          <Text style={styles.likeCount}>130</Text>
+          <Text style={styles.likeCount}>{likesReceivedCount}</Text>
         </View>
         <Text style={styles.appName}>Mochila</Text>
         <TouchableOpacity>
@@ -126,7 +147,10 @@ export default function HomeScreen() {
                 <View style={styles.memberLocation}>
                   <View style={[styles.statusDot, { backgroundColor: member.isOnline ? '#4CAF50' : '#FFC107' }]} />
                   <Text style={styles.memberText}>
-                    {member.age ? `${member.age}歳` : ''} {member.region || '未設定'}
+                    {(() => {
+                      const age = getDisplayAge(member);
+                      return age ? `${age}歳` : '';
+                    })()} {member.region || '未設定'}
                   </Text>
                 </View>
                 <View style={styles.memberStats}>
@@ -240,7 +264,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   tabActive: {
-    borderBottomWidth: 2,
+    borderBottomWidth: 0,
     borderBottomColor: COLORS.PURPLE_PRIMARY,
   },
   tabText: {
@@ -254,7 +278,7 @@ const styles = StyleSheet.create({
   },
   tabIndicator: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -10,
     left: 0,
     right: 0,
     height: 2,
@@ -267,7 +291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: 10,
-    gap: 10,
+    justifyContent: 'space-between',
   },
   memberCard: {
     width: CARD_WIDTH,
