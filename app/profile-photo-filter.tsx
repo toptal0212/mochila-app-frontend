@@ -6,13 +6,34 @@ import { COLORS } from '@/constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Filter configurations with CSS-like properties
+// Filter configurations using color overlays and opacity
+// Since React Native doesn't support CSS filters, we use color tints and opacity
 const FILTER_CONFIGS = {
-  original: { brightness: 1, contrast: 1, saturation: 1 },
-  clear: { brightness: 1.1, contrast: 1.1, saturation: 1.2 },
-  creamy: { brightness: 1.15, contrast: 0.95, saturation: 0.9 },
-  cool: { brightness: 0.95, contrast: 1.05, saturation: 1.1 },
-  hot: { brightness: 1.05, contrast: 1.1, saturation: 1.3 },
+  original: { 
+    overlayColor: null, 
+    overlayOpacity: 0,
+    imageOpacity: 1,
+  },
+  clear: { 
+    overlayColor: 'rgba(255, 255, 255, 0.15)', // Slight white overlay for brightness
+    overlayOpacity: 0.15,
+    imageOpacity: 1,
+  },
+  creamy: { 
+    overlayColor: 'rgba(255, 248, 220, 0.25)', // Warm creamy overlay
+    overlayOpacity: 0.25,
+    imageOpacity: 0.95,
+  },
+  cool: { 
+    overlayColor: 'rgba(173, 216, 230, 0.2)', // Cool blue overlay
+    overlayOpacity: 0.2,
+    imageOpacity: 0.98,
+  },
+  hot: { 
+    overlayColor: 'rgba(255, 140, 0, 0.15)', // Warm orange overlay
+    overlayOpacity: 0.15,
+    imageOpacity: 1.05,
+  },
 };
 
 export default function ProfilePhotoFilterScreen() {
@@ -43,9 +64,7 @@ export default function ProfilePhotoFilterScreen() {
 
   const getFilterStyle = (filterId: string) => {
     const config = FILTER_CONFIGS[filterId as keyof typeof FILTER_CONFIGS];
-    return {
-      opacity: config.brightness,
-    };
+    return config;
   };
 
   const handleNext = () => {
@@ -79,9 +98,19 @@ export default function ProfilePhotoFilterScreen() {
 
       {/* Main Image with Filter */}
       <View style={styles.imageContainer}>
-        <View style={[styles.filterOverlay, getFilterStyle(selectedFilter)]}>
-          <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
-        </View>
+        <Image 
+          source={{ uri: imageUri }} 
+          style={[styles.image, { opacity: getFilterStyle(selectedFilter).imageOpacity }]} 
+          resizeMode="cover" 
+        />
+        {getFilterStyle(selectedFilter).overlayColor && (
+          <View 
+            style={[
+              styles.filterOverlay, 
+              { backgroundColor: getFilterStyle(selectedFilter).overlayColor || 'transparent' }
+            ]} 
+          />
+        )}
       </View>
 
       {/* Filter Thumbnails */}
@@ -104,9 +133,21 @@ export default function ProfilePhotoFilterScreen() {
                   selectedFilter === filter.id && styles.filterThumbnailSelected,
                 ]}
               >
-                <View style={getFilterStyle(filter.id)}>
-                  <Image source={{ uri: imageUri }} style={styles.filterThumbnailImage} />
-                </View>
+                <Image 
+                  source={{ uri: imageUri }} 
+                  style={[
+                    styles.filterThumbnailImage,
+                    { opacity: getFilterStyle(filter.id).imageOpacity }
+                  ]} 
+                />
+                {getFilterStyle(filter.id).overlayColor && (
+                  <View 
+                    style={[
+                      StyleSheet.absoluteFill,
+                      { backgroundColor: getFilterStyle(filter.id).overlayColor || 'transparent' }
+                    ]} 
+                  />
+                )}
               </View>
               <Text
                 style={[
@@ -151,11 +192,11 @@ export default function ProfilePhotoFilterScreen() {
       </View>
 
       {/* Fixed Completion Button for Mobile */}
-      <View style={styles.fixedButtonContainer}>
+      {/* <View style={styles.fixedButtonContainer}>
         <TouchableOpacity style={styles.completeButton} onPress={handleNext}>
           <Text style={styles.completeButtonText}>完了</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
     </SafeAreaView>
   );
 }
@@ -188,10 +229,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.BLACK,
+    overflow: 'hidden',
+    position: 'relative',
   },
   filterOverlay: {
+    position: 'absolute',
     width: SCREEN_WIDTH,
     height: SCREEN_WIDTH,
+    pointerEvents: 'none',
   },
   image: {
     width: SCREEN_WIDTH,

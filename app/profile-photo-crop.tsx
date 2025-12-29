@@ -133,6 +133,8 @@ export default function ProfilePhotoCropScreen() {
       const currentTranslateX = translateX.value;
       const currentTranslateY = translateY.value;
 
+      console.log('🔧 Transform values:', { currentScale, currentTranslateX, currentTranslateY });
+
       // Load original image to get dimensions
       const imageInfo = await ImageManipulator.manipulateAsync(imageUri, [], {
         format: ImageManipulator.SaveFormat.PNG,
@@ -140,25 +142,67 @@ export default function ProfilePhotoCropScreen() {
 
       const imageWidth = imageInfo.width;
       const imageHeight = imageInfo.height;
+      console.log('📏 Original image dimensions:', { imageWidth, imageHeight });
 
-      // Calculate the visible area dimensions
-      const displayScale = Math.min(SCREEN_WIDTH / imageWidth, SCREEN_WIDTH / imageHeight);
+      // For resizeMode="cover", calculate how the image is actually displayed
+      // The image fills the container (SCREEN_WIDTH x SCREEN_WIDTH) by covering it
+      const imageAspect = imageWidth / imageHeight;
+      const containerAspect = 1; // Square container
       
-      // Calculate crop region in original image coordinates
-      const circleCenterX = SCREEN_WIDTH / 2;
-      const circleCenterY = SCREEN_WIDTH / 2;
+      let displayedWidth, displayedHeight, offsetX, offsetY;
       
-      // Convert screen coordinates to image coordinates
-      const imageScaleFactor = 1 / (displayScale * currentScale);
-      const cropSizeInImage = CIRCLE_SIZE * imageScaleFactor;
+      if (imageAspect > containerAspect) {
+        // Image is wider - height fills container, width is cropped
+        displayedHeight = SCREEN_WIDTH;
+        displayedWidth = SCREEN_WIDTH * imageAspect;
+        offsetX = (displayedWidth - SCREEN_WIDTH) / 2;
+        offsetY = 0;
+      } else {
+        // Image is taller - width fills container, height is cropped
+        displayedWidth = SCREEN_WIDTH;
+        displayedHeight = SCREEN_WIDTH / imageAspect;
+        offsetX = 0;
+        offsetY = (displayedHeight - SCREEN_WIDTH) / 2;
+      }
       
-      const cropXInImage = (circleCenterX - CIRCLE_SIZE / 2 - currentTranslateX) * imageScaleFactor;
-      const cropYInImage = (circleCenterY - CIRCLE_SIZE / 2 - currentTranslateY) * imageScaleFactor;
-
+      console.log('📐 Displayed dimensions:', { displayedWidth, displayedHeight, offsetX, offsetY });
+      
+      // Scale factor from displayed size to original image size
+      const scaleToOriginal = imageWidth / displayedWidth;
+      console.log('🔍 Scale to original:', scaleToOriginal);
+      
+      // Circle center in screen coordinates (center of the screen)
+      const circleCenterScreenX = SCREEN_WIDTH / 2;
+      const circleCenterScreenY = SCREEN_WIDTH / 2;
+      
+      // Convert circle center from screen coordinates to image displayed coordinates
+      // Account for the user's pan (translate)
+      const circleCenterImageX = (circleCenterScreenX + offsetX - currentTranslateX) / currentScale;
+      const circleCenterImageY = (circleCenterScreenY + offsetY - currentTranslateY) / currentScale;
+      
+      console.log('🎯 Circle center in image coords:', { circleCenterImageX, circleCenterImageY });
+      
+      // Circle radius in displayed image coordinates
+      const circleRadiusDisplayed = CIRCLE_SIZE / 2 / currentScale;
+      
+      // Convert to original image coordinates
+      const cropCenterX = circleCenterImageX * scaleToOriginal;
+      const cropCenterY = circleCenterImageY * scaleToOriginal;
+      const cropRadius = circleRadiusDisplayed * scaleToOriginal;
+      
+      console.log('✂️ Crop in original coords:', { cropCenterX, cropCenterY, cropRadius });
+      
+      // Calculate crop rectangle (top-left corner and size)
+      const cropX = cropCenterX - cropRadius;
+      const cropY = cropCenterY - cropRadius;
+      const cropSize = cropRadius * 2;
+      
       // Ensure crop region is within image bounds
-      const finalCropX = Math.max(0, Math.min(cropXInImage, imageWidth - cropSizeInImage));
-      const finalCropY = Math.max(0, Math.min(cropYInImage, imageHeight - cropSizeInImage));
-      const finalCropSize = Math.min(cropSizeInImage, imageWidth, imageHeight);
+      const finalCropX = Math.max(0, Math.min(cropX, imageWidth - cropSize));
+      const finalCropY = Math.max(0, Math.min(cropY, imageHeight - cropSize));
+      const finalCropSize = Math.min(cropSize, imageWidth - finalCropX, imageHeight - finalCropY);
+
+      console.log('📦 Final crop:', { finalCropX, finalCropY, finalCropSize });
 
       // Step 1: Crop to square
       const croppedImage = await ImageManipulator.manipulateAsync(
@@ -166,10 +210,10 @@ export default function ProfilePhotoCropScreen() {
         [
           {
             crop: {
-              originX: finalCropX,
-              originY: finalCropY,
-              width: finalCropSize,
-              height: finalCropSize,
+              originX: Math.round(finalCropX),
+              originY: Math.round(finalCropY),
+              width: Math.round(finalCropSize),
+              height: Math.round(finalCropSize),
             },
           },
           {
@@ -185,6 +229,8 @@ export default function ProfilePhotoCropScreen() {
           base64: false,
         }
       );
+
+      console.log('✅ Image cropped successfully:', croppedImage.uri);
 
       // Navigate to next screen with high-quality cropped image
       router.push({

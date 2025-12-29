@@ -165,6 +165,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
+    overflow: 'hidden',
   },
   exampleImagePlaceholder: {
     width: SCREEN_WIDTH - 80,
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH - 80,
     height: 280,
     borderRadius: 15,
-    backgroundColor: COLORS.GREY_LIGHT,
+    alignSelf: 'center',
   },
   placeholderText: {
     fontSize: 14,
